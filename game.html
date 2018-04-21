@@ -8,6 +8,10 @@
             <button onclick="moveView(1,0)">view RIGHT</button>
             <button onclick="moveView(0,-1)">view UP</button>
             <button onclick="moveView(0,1)">view DOWN</button>
+            <button onclick="animMoveView(-1,0)">animMove LEFT</button>
+            <button onclick="animMoveView(1,0)">animMove RIGHT</button>
+            <button onclick="animMoveView(0,-1)">animMove UP</button>
+            <button onclick="animMoveView(0,1)">animMove DOWN</button>
 
         </div>
             
@@ -159,15 +163,63 @@
             Board.prototype.offsetView = function(aX,aY) {
                 var oX = aX * this.wX
                 var oY = aY * this.wY
-                this.oX += oX;
-                this.oY += oY;
-                this.renderQueue.push(moveBy)
+                
+                this.setView(this.oX + oX, this.oY + oY)
+            }
+
+            Board.prototype.setView = function(aX,aY) {
+                this.oX = aX;
+                this.oY = aY;
+                this.renderQueue.push(moveTo)
                 var self = this;
 
-                function moveBy() {
+                function moveTo() {
                     self.board.style.left = self.oX+"px"
                     self.board.style.top = self.oY+"px"
                 }
+            }
+
+            Board.prototype.scheduleAnimation = function(time, callback) {
+                var start = new Date().getTime()
+
+                var root = this 
+                addNextAnim()
+
+                function performAnimation() {
+                    var now = new Date().getTime()
+                    var ratio = Math.min( (now-start) / time,1)
+                    callback(ratio)
+                    if (ratio < 1) {
+                        addNextAnim()
+                    }
+                }
+
+                function addNextAnim() {
+                    root.renderQueue.push(performAnimation)
+                }
+
+            }
+
+            Board.prototype.animMoveView = function(time, aX,aY) {
+                var start = {
+                    x: this.oX,
+                    y: this.oY
+                }
+
+                var end = {
+                    x: this.oX + aX * this.wX,
+                    y: this.oY + aY * this.wY
+                }
+
+                var self = this
+                this.scheduleAnimation(time, function(ratio) {
+                    if (ratio == 1) {
+                        self.setView(end.x,end.y)
+                    }
+                    else {
+                        self.setView(start.x + (end.x-start.x)*ratio, start.y + (end.y-start.y)*ratio)
+                    }
+                })
             }
 
             function XYMap() {
@@ -208,6 +260,10 @@
 
             function moveView(offX,offY) {
                 board.offsetView(offX,offY)
+            }
+
+            function animMoveView(aX,aY) {
+                board.animMoveView(200,aX,aY)
             }
 
         </script>
