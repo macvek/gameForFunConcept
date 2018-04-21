@@ -1,16 +1,27 @@
 <html>
     <body>
 
-        <div id="board">
+        <div id="boardOverlay"><div id="board"></div></div>
+
+        <div id="debugpane">
+            <button onclick="moveView(-1,0)">view LEFT</button>
+            <button onclick="moveView(1,0)">view RIGHT</button>
+            <button onclick="moveView(0,-1)">view UP</button>
+            <button onclick="moveView(0,1)">view DOWN</button>
 
         </div>
-
+            
         <style>
-            #board {
+
+            #boardOverlay {
                 position: relative;
                 border:1px solid #00f;
-                width:640;
-                height:400px;
+                width: 640px;
+                height: 480px;
+                overflow: hidden;
+            }
+            #board {
+                position: relative;
             }
 
             .board-item {
@@ -19,6 +30,17 @@
                 width:20px;
                 height:20px;
             }
+
+            #debugpane {
+                position: fixed;
+                display: flex;
+                flex-flow: column;
+                top:5px;
+                right:5px;
+                border:1px solid #ff0;
+                padding: 10px;
+            }
+
         </style>
 
         <script>
@@ -26,10 +48,10 @@
         </script>
         <script src="game.js"></script>
         <script>
-            
+            var board;
             window.addEventListener('load', function() {
                 var game = new Modules.Game()
-                var board = new Board()
+                board = new Board()
                 game.startWithBoard(board)
                 board.setOnClick(function(x,y) {
                     game.onClick(x,y)
@@ -39,8 +61,11 @@
 
             function Board() {
                 this.board = document.getElementById('board')
+                this.boardOverlay = document.getElementById('boardOverlay')
                 this.cX = 0
                 this.cY = 0
+                this.oX = 0
+                this.oY = 0
                 this.fields = new XYMap()
                 this.renderQueue = []
                 var self = this
@@ -49,9 +74,9 @@
 
             Board.prototype.setOnClick = function(callback) {
                 var self = this
-                this.board.addEventListener("click", function(e) {
-                    var x = Math.max(0,Math.min(self.boardWX-1,e.offsetX))
-                    var y = Math.max(0,Math.min(self.boardWY-1,e.offsetY))
+                this.boardOverlay.addEventListener("click", function(e) {
+                    var x = Math.max(0,Math.min(self.boardWX-1,e.offsetX))-self.oX
+                    var y = Math.max(0,Math.min(self.boardWY-1,e.offsetY))-self.oY
                     console.log("onClick ",x,y)
                     callback(x,y)
                 })
@@ -131,6 +156,20 @@
                 }
             }
 
+            Board.prototype.offsetView = function(aX,aY) {
+                var oX = aX * this.wX
+                var oY = aY * this.wY
+                this.oX += oX;
+                this.oY += oY;
+                this.renderQueue.push(moveBy)
+                var self = this;
+
+                function moveBy() {
+                    self.board.style.left = self.oX+"px"
+                    self.board.style.top = self.oY+"px"
+                }
+            }
+
             function XYMap() {
                 this.fields = []
             }
@@ -165,6 +204,10 @@
                 console.log("putTo",aX,aY)
                 this.board.tryMove(this,aX,aY)
 
+            }
+
+            function moveView(offX,offY) {
+                board.offsetView(offX,offY)
             }
 
         </script>
