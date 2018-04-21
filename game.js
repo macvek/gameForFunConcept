@@ -1,7 +1,7 @@
 Modules.Game = Game
 
 function Game() {
-
+    this.lastId = 1
 }
 
 Game.prototype.startWithBoard = function(board) {
@@ -17,6 +17,17 @@ Game.prototype.startWithBoard = function(board) {
 
 Game.prototype.onClick = function(x,y) {
     var coords = this.boardApi.fieldOf(x,y)
-    var entity = this.boardApi.newEntity()
-    entity.putTo(coords.x,coords.y)
+    var atCoords = this.boardApi.fields.at(coords.x, coords.y).is()
+    if (atCoords) {
+        atCoords.markSelected(true)
+        if (this.selected) {
+            this.selected.markSelected(false)
+        }
+        this.selected = atCoords
+    }
+    else {
+        var entity = this.boardApi.newEntity()
+        entity.putTo(coords.x,coords.y)
+        entity.debugId(this.lastId++)
+    }
 }

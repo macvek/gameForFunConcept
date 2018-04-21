@@ -1,7 +1,11 @@
 <html>
     <body>
 
-        <div id="boardOverlay"><div id="board"></div></div>
+        <div id="boardOverlay">
+            <div id="board"></div>
+            <div id="boardClick"></div>
+        </div>
+
 
         <div id="debugpane">
             <button onclick="moveView(-1,0)">view LEFT</button>
@@ -21,8 +25,15 @@
                 position: relative;
                 border:1px solid #00f;
                 width: 640px;
-                height: 480px;
+                height: 400px;
                 overflow: hidden;
+            }
+
+            #boardClick {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+
             }
             #board {
                 position: relative;
@@ -45,6 +56,15 @@
                 padding: 10px;
             }
 
+            .debugId {
+                margin:5px 5px;
+                color:red;
+            }
+
+            .selected {
+                border-width:2px;
+            }
+
         </style>
 
         <script>
@@ -65,7 +85,7 @@
 
             function Board() {
                 this.board = document.getElementById('board')
-                this.boardOverlay = document.getElementById('boardOverlay')
+                this.boardClick = document.getElementById('boardClick')
                 this.cX = 0
                 this.cY = 0
                 this.oX = 0
@@ -78,7 +98,7 @@
 
             Board.prototype.setOnClick = function(callback) {
                 var self = this
-                this.boardOverlay.addEventListener("click", function(e) {
+                this.boardClick.addEventListener("click", function(e) {
                     var x = Math.max(0,Math.min(self.boardWX-1,e.offsetX))-self.oX
                     var y = Math.max(0,Math.min(self.boardWY-1,e.offsetY))-self.oY
                     console.log("onClick ",x,y)
@@ -250,11 +270,60 @@
             
             function BoardEntity(board) {
                 this.board = board
+                this.renderActions = []
             }
 
             BoardEntity.prototype.putTo = function(aX,aY) {
                 console.log("putTo",aX,aY)
                 this.board.tryMove(this,aX,aY)
+
+            }
+
+            BoardEntity.prototype.debugId = function(id) {
+                var self = this
+                this.onRender(function() {
+                    if (!self.hasDebugId) {
+                        self.hasDebugId = true
+                        var idNode = document.createElement("div")
+                        idNode.className="debugId"
+                        self._boardPriv.node.appendChild(idNode)
+                        self.debugId = idNode
+                    }
+
+                    self.debugId.innerText = id
+                })
+
+            }
+
+
+            BoardEntity.prototype.onRender = function(action) {
+                var self = this
+                this.renderActions.push(action)
+                if (this._boardPriv) {
+                    this.board.renderQueue.push(function() { self.flushRender() })
+                }
+            }
+
+            BoardEntity.prototype.flushRender = function() {
+                var queue = this.renderActions
+                this.renderActions = []
+                for (each of queue) {
+                    each()
+                }
+            }
+
+            BoardEntity.prototype.markSelected = function(selected) {
+                var node = this._boardPriv.node
+                if (!selected) {
+                    this.onRender(function() {
+                        node.className = node.className.replace(/selected/g,"")
+                    })
+                }
+                else {
+                    this.onRender(function() {
+                        node.className += " selected"
+                    })
+                }
 
             }
 
