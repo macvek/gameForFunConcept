@@ -1,0 +1,172 @@
+<html>
+    <body>
+
+        <div id="board">
+
+        </div>
+
+        <style>
+            #board {
+                position: relative;
+                border:1px solid #00f;
+                width:640;
+                height:400px;
+            }
+
+            .board-item {
+                position: absolute;
+                border:1px solid #f00;
+                width:20px;
+                height:20px;
+            }
+        </style>
+
+        <script>
+            window.Modules = {}
+        </script>
+        <script src="game.js"></script>
+        <script>
+            
+            window.addEventListener('load', function() {
+                var game = new Modules.Game()
+                var board = new Board()
+                game.startWithBoard(board)
+                board.setOnClick(function(x,y) {
+                    game.onClick(x,y)
+                })
+
+            })
+
+            function Board() {
+                this.board = document.getElementById('board')
+                this.cX = 0
+                this.cY = 0
+                this.fields = new XYMap()
+                this.renderQueue = []
+                var self = this
+                this.animator = setInterval(function() {self.render() }, 1000/30)
+            }
+
+            Board.prototype.setOnClick = function(callback) {
+                var self = this
+                this.board.addEventListener("click", function(e) {
+                    var x = Math.max(0,Math.min(self.boardWX-1,e.offsetX))
+                    var y = Math.max(0,Math.min(self.boardWY-1,e.offsetY))
+                    console.log("onClick ",x,y)
+                    callback(x,y)
+                })
+            }
+
+            Board.prototype.fieldOf = function(aX,aY) {
+                return {
+                    x: Math.floor(aX / this.wX),
+                    y: Math.floor(aY / this.wY)
+                }
+            }
+            
+            Board.prototype.fieldSize = function(aX,aY) {
+                console.log('fieldSize',aX,aY)
+                this.wX = aX
+                this.wY = aY
+            }
+
+            Board.prototype.viewSize = function(aX,aY) {
+                console.log('viewSize',aX,aY)
+                this.boardWX = aX
+                this.boardWY = aY
+            }
+            
+            Board.prototype.newEntity = function() {
+                return new BoardEntity(this)
+            }
+
+            Board.prototype.tryMove = function(what, aX,aY) {
+                var self = this
+                console.log("tryMove", aX,aY)
+                what.x = aX
+                what.y = aY
+
+                var node
+
+                if (!what._boardPriv) {
+                    what._boardPriv = {}
+                    node = this.createItem()
+                    what._boardPriv.node = node 
+                    appendNode()
+                    putInPlace()
+                    
+                }
+                else {
+                    node = what._boardPriv.node
+                    putInPlace()
+                }
+
+                function appendNode() {
+                    self.renderQueue.push( function() {
+                        self.board.appendChild(node)
+                    })
+                }
+
+                function putInPlace() {
+                    self.renderQueue.push( function() {
+                        node.style.left = what.x * self.wX
+                        node.style.top = what.y * self.wY
+                    })
+                } 
+
+                this.fields.at(aX,aY).put(what)
+            }
+
+            Board.prototype.createItem = function() {
+                var item = document.createElement("div")
+                item.className = 'board-item'
+                return item
+            }
+
+            Board.prototype.render = function() {
+                var queue = this.renderQueue
+                this.renderQueue = []
+                for (each of queue) {
+                    each()
+                }
+            }
+
+            function XYMap() {
+                this.fields = []
+            }
+
+            XYMap.prototype.at = function(x,y) {
+                var parent = this
+                return {
+                    is : function() {
+                        if (parent.fields[x] && parent.fields[x][y]) {
+                            return parent.fields[x][y]
+                        }
+                    },
+                    put : function(what) {
+                        if (parent.fields[x]) {
+                            parent.fields[x][y] = what
+                        }
+                        else {
+                            var sub = []
+                            sub[y] = what
+                            parent.fields[x] = sub
+                        }
+                    }
+
+                }
+            }
+            
+            function BoardEntity(board) {
+                this.board = board
+            }
+
+            BoardEntity.prototype.putTo = function(aX,aY) {
+                console.log("putTo",aX,aY)
+                this.board.tryMove(this,aX,aY)
+
+            }
+
+        </script>
+    </body>
+</html>
