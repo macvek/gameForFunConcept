@@ -16,7 +16,11 @@
             <button onclick="animMoveView(1,0)">animMove RIGHT</button>
             <button onclick="animMoveView(0,-1)">animMove UP</button>
             <button onclick="animMoveView(0,1)">animMove DOWN</button>
-
+            <button onclick="go(-1,0)">go LEFT</button>
+            <button onclick="go(1,0)">go RIGHT</button>
+            <button onclick="go(0,-1)">go UP</button>
+            <button onclick="go(0,1)">go DOWN</button>
+            
         </div>
             
         <style>
@@ -73,8 +77,9 @@
         <script src="game.js"></script>
         <script>
             var board;
+            var game;
             window.addEventListener('load', function() {
-                var game = new Modules.Game()
+                game = new Modules.Game()
                 board = new Board()
                 game.startWithBoard(board)
                 board.setOnClick(function(x,y) {
@@ -129,9 +134,13 @@
                 return new BoardEntity(this)
             }
 
-            Board.prototype.tryMove = function(what, aX,aY) {
+            Board.prototype.toRender = function(callback) {
+                this.renderQueue.push(callback)
+            }
+
+            Board.prototype.putIt = function(what, aX,aY) {
                 var self = this
-                console.log("tryMove", aX,aY)
+                console.log("putIt", aX,aY)
                 what.x = aX
                 what.y = aY
 
@@ -141,27 +150,18 @@
                     what._boardPriv = {}
                     node = this.createItem()
                     what._boardPriv.node = node 
-                    appendNode()
-                    putInPlace()
-                    
-                }
-                else {
-                    node = what._boardPriv.node
-                    putInPlace()
-                }
-
-                function appendNode() {
-                    self.renderQueue.push( function() {
+                    this.toRender( function() {
                         self.board.appendChild(node)
                     })
                 }
 
-                function putInPlace() {
-                    self.renderQueue.push( function() {
+                what.withNode(function(node) {
+                    what.onRender( function() {
                         node.style.left = what.x * self.wX
                         node.style.top = what.y * self.wY
                     })
-                } 
+                })
+                 
 
                 this.fields.at(aX,aY).put(what)
             }
@@ -242,6 +242,40 @@
                 })
             }
 
+            Board.prototype.animMove = function(time, what, offsetX, offsetY, callback) {
+                var start = {
+                    x: what.x * this.wX,
+                    y: what.y * this.wY
+                }
+
+                var end = {
+                    x: (what.x + offsetX) * this.wX,
+                    y: (what.y + offsetY) * this.wY
+                }
+
+                var diff = {
+                    x: offsetX * this.wX,
+                    y: offsetY * this.wY
+                }
+                
+                this.scheduleAnimation(time, function(ratio) {
+
+                    what.withNode( function(node) {
+                        what.onRender(function() {
+                            if (ratio == 1) {
+                                node.style.left = end.x + 'px',
+                                node.style.top = end.y + 'px'
+                                callback(true)
+                            }
+                            else {
+                                node.style.left = start.x + ratio*diff.x +'px'
+                                node.style.top = start.y + ratio*diff.y +'px'
+                            }
+                        })
+                    })
+                })
+            }
+
             function XYMap() {
                 this.fields = []
             }
@@ -275,7 +309,7 @@
 
             BoardEntity.prototype.putTo = function(aX,aY) {
                 console.log("putTo",aX,aY)
-                this.board.tryMove(this,aX,aY)
+                this.board.putIt(this,aX,aY)
 
             }
 
@@ -324,8 +358,19 @@
                         node.className += " selected"
                     })
                 }
-
             }
+
+            BoardEntity.prototype.withNode = function(callback) {
+                var node = this._boardPriv.node
+                if (!node) {
+                    throw "withNode without node..."
+                }
+                else {
+                    callback(node)
+                }
+            }
+
+            
 
             function moveView(offX,offY) {
                 board.offsetView(offX,offY)
@@ -333,6 +378,10 @@
 
             function animMoveView(aX,aY) {
                 board.animMoveView(200,aX,aY)
+            }
+
+            function go(aX,aY) {
+                game.moveSelected(aX,aY);
             }
 
         </script>
