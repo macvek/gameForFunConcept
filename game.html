@@ -96,6 +96,29 @@
                     game.onClick(x,y)
                 })
 
+                window.addEventListener("keydown", function(e) {
+                                        
+                    switch(e.key) {
+                        case 'w': game.keyStates.keyUp = true; break
+                        case 'a': game.keyStates.keyLeft = true; break
+                        case 's': game.keyStates.keyDown = true; break
+                        case 'd': game.keyStates.keyRight = true; break
+                    }
+                })
+
+                window.addEventListener("keyup", function(e) {
+                    switch(e.key) {
+                        case 'w': game.keyStates.keyUp = false; break
+                        case 'a': game.keyStates.keyLeft = false; break
+                        case 's': game.keyStates.keyDown = false; break
+                        case 'd': game.keyStates.keyRight = false; break
+                    }
+                })
+
+                function F() {
+                    return false
+                }
+
             })
 
             function Board() {

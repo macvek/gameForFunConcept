@@ -4,7 +4,21 @@ function Game() {
     var self = this
     this.lastId = 1
     this.frame = 0
-    this.heartBeat = setInterval(10,function() { self.nextFrame() })
+    this.heartBeat = setInterval(function() { self.nextFrame() },10)
+    this.keyStates = {
+        keyUp:false,
+        keyDown:false,
+        keyLeft:false,
+        keyRight:false
+    }
+}
+
+Game.prototype.nextFrame = function() {
+    var moveOffsetY = this.keyStates.keyUp?-1:0 + this.keyStates.keyDown?1:0
+    var moveOffsetX = this.keyStates.keyLeft?-1:0 + this.keyStates.keyRight?1:0
+    if (moveOffsetX || moveOffsetY) {
+        this.moveSelected(moveOffsetX,moveOffsetY)
+    }
 }
 
 Game.prototype.startWithBoard = function(board) {
@@ -19,8 +33,9 @@ Game.prototype.startWithBoard = function(board) {
 }
 
 Game.prototype.moveSelected = function(x,y) {
-    if (this.selected) {
-        var selected = this.selected
+    var selected = this.selected
+    if (selected && !selected.moving) {
+        selected.moving = true
         var startAt = {x: selected.x, y: selected.y}
 
         var board = this.boardApi
@@ -33,6 +48,8 @@ Game.prototype.moveSelected = function(x,y) {
                 
                 selected.x += x
                 selected.y += y
+
+                selected.moving = false
 
             }
             else {
