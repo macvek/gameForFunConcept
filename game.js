@@ -29,6 +29,7 @@ Game.prototype.startWithBoard = function(board) {
     var entity = board.newEntity()
     
     entity.putTo(0,0)
+    this.cursor = board.newCursor()
 
 }
 
@@ -92,4 +93,23 @@ Game.prototype.onClick = function(x,y) {
         entity.putTo(coords.x,coords.y)
         entity.debugId(this.lastId++)
     }
+}
+
+Game.prototype.onCursorMove = function(x,y) {
+    if (x == null && y == null) {
+        this.hideCursor()
+    }
+    else {
+        this.putCursorTo(x,y)
+    }
+}
+
+Game.prototype.hideCursor = function() {
+    this.cursor.setVisible(false)
+}
+
+Game.prototype.putCursorTo = function(x,y) {
+    var coords = this.boardApi.fieldOf(x,y)
+    this.cursor.placeAt(coords.x,coords.y)
+    this.cursor.setVisible(true)
 }

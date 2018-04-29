@@ -54,6 +54,11 @@
                 height:20px;
             }
 
+            .board-cursor {
+                border:1px dotted green;
+            }
+
+
             .transformed {
                 height:40px;
                 margin-top:-20px;
@@ -94,6 +99,10 @@
                 game.startWithBoard(board)
                 board.setOnClick(function(x,y) {
                     game.onClick(x,y)
+                })
+
+                board.setOnCursorMove(function(x,y) {
+                    game.onCursorMove(x,y)
                 })
 
                 window.addEventListener("keydown", function(e) {
@@ -137,11 +146,30 @@
             Board.prototype.setOnClick = function(callback) {
                 var self = this
                 this.boardClick.addEventListener("click", function(e) {
-                    var x = Math.max(0,Math.min(self.boardWX-1,e.offsetX))-self.oX
-                    var y = Math.max(0,Math.min(self.boardWY-1,e.offsetY))-self.oY
+                    var coords = xyFromEvent(self,e)
+                    var x = coords.x
+                    var y = coords.y
                     console.log("onClick ",x,y)
                     callback(x,y)
                 })
+            }
+
+            Board.prototype.setOnCursorMove = function(callback) {
+                var self = this
+                this.boardClick.addEventListener("mousemove", function(e) {
+                    var coords = xyFromEvent(self, e)
+                    callback(coords.x,coords.y)
+                })
+
+                this.boardClick.addEventListener("mouseleave", function() {
+                    callback(null,null)
+                })
+            }
+
+            function xyFromEvent(self, e) {
+                var x = Math.max(0,Math.min(self.boardWX-1,e.offsetX))-self.oX
+                var y = Math.max(0,Math.min(self.boardWY-1,e.offsetY))-self.oY
+                return {x:x,y:y}    
             }
 
             Board.prototype.fieldOf = function(aX,aY) {
@@ -167,13 +195,22 @@
                 return new BoardEntity(this)
             }
 
+            Board.prototype.newCursor = function() {
+                var cursor = this.newEntity()
+                cursor.onRenderWithNode( function(node) {
+                    node.className += " board-cursor skip-z-index"
+                })
+
+                return cursor
+            }
+
             Board.prototype.toRender = function(callback) {
                 this.renderQueue.push(callback)
             }
 
-            Board.prototype.putIt = function(what, aX,aY) {
+            Board.prototype.placeAt = function(what, aX,aY) {
                 var self = this
-                console.log("putIt", aX,aY)
+                console.log("placeAt", aX,aY)
                 what.x = aX
                 what.y = aY
 
@@ -190,15 +227,19 @@
 
                 var newZ = this.calculateZ(aY)
 
-                what.withNode(function(node) {
-                    what.onRender( function() {
-                        node.style.left = what.x * self.wX
-                        node.style.top = what.y * self.wY
+                what.onRenderWithNode(function(node) {
+                
+                    node.style.left = what.x * self.wX
+                    node.style.top = what.y * self.wY
+                    if (!node.className.indexOf("skip-z-index") != -1) {
                         node.style.zIndex = newZ
-                    })
+                    }
                 })
-                 
-
+            }
+            
+            Board.prototype.putIt = function(what, aX,aY) {
+                this.placeAt(what,aX,aY)
+                console.log("putIt", aX,aY)
                 this.fields.at(aX,aY).put(what)
             }
 
@@ -295,22 +336,27 @@
                 }
                 
                 var newZ = this.calculateZ(what.y+offsetY)
+                var zBeforeMove = offsetY > 0
+                
+                var self = this
 
-                this.scheduleAnimation(time, function(ratio) {
-
-                    what.withNode( function(node) {
-                        what.onRender(function() {
-                            if (ratio == 1) {
-                                node.style.left = end.x + 'px',
-                                node.style.top = end.y + 'px'
+                what.onRenderWithNode( function(node) {
+                    if (zBeforeMove) {
+                        node.style.zIndex = newZ
+                    }
+                    self.scheduleAnimation(time, function(ratio) {
+                        if (ratio == 1) {
+                            node.style.left = end.x + 'px',
+                            node.style.top = end.y + 'px'
+                            if (!zBeforeMove) {
                                 node.style.zIndex = newZ
-                                callback(true)
                             }
-                            else {
-                                node.style.left = start.x + ratio*diff.x +'px'
-                                node.style.top = start.y + ratio*diff.y +'px'
-                            }
-                        })
+                            callback(true)
+                        }
+                        else {
+                            node.style.left = start.x + ratio*diff.x +'px'
+                            node.style.top = start.y + ratio*diff.y +'px'
+                        }
                     })
                 })
             }
@@ -320,13 +366,10 @@
             }
 
             Board.prototype.transformEntity = function(ent) {
-                ent.withNode( function(node) {
-                    ent.onRender(function() {
-                        var classes = node.className.split(' ')
-                        classes.push('transformed')
-                        node.className = classes.join(' ')
-                        
-                    })
+                ent.onRenderWithNode( function(node) {
+                    var classes = node.className.split(' ')
+                    classes.push('transformed')
+                    node.className = classes.join(' ')
                 })
             }
 
@@ -395,6 +438,10 @@
 
             }
 
+            BoardEntity.prototype.placeAt = function(aX,aY) {
+                this.board.placeAt(this,aX,aY)
+            }
+
             BoardEntity.prototype.debugId = function(id) {
                 var self = this
                 this.onRender(function() {
@@ -411,6 +458,14 @@
 
             }
 
+            BoardEntity.prototype.onRenderWithNode = function(action) {
+                var self = this
+                self.onRender(function() { 
+                    self.withNode(function(node) {
+                        action(node)
+                    })
+                })
+            }
 
             BoardEntity.prototype.onRender = function(action) {
                 var self = this
@@ -419,6 +474,19 @@
                     this.board.renderQueue.push(function() { self.flushRender() })
                 }
             }
+
+
+            BoardEntity.prototype.withNode = function(callback) {
+                var node = this._boardPriv.node
+                if (!node) {
+                    throw "withNode without node..."
+                }
+                else {
+                    callback(node)
+                }
+            }
+
+            
 
             BoardEntity.prototype.flushRender = function() {
                 var queue = this.renderActions
@@ -442,18 +510,18 @@
                 }
             }
 
-            BoardEntity.prototype.withNode = function(callback) {
-                var node = this._boardPriv.node
-                if (!node) {
-                    throw "withNode without node..."
-                }
-                else {
-                    callback(node)
-                }
-            }
 
             BoardEntity.prototype.dropNode = function(callback) {
                 this._boardPriv.node = null
+            }
+
+            BoardEntity.prototype.setVisible = function(isSet) {
+                this.visible = isSet
+                var self = this
+                
+                this.onRenderWithNode(function(node) {
+                    node.style.display = self.visible ? "block" : "none"
+                })
             }
 
 
