@@ -21,6 +21,8 @@
             <button onclick="go(0,-1)">go UP</button>
             <button onclick="go(0,1)">go DOWN</button>
             <button onclick="removeSelected()">Remove selected</button>
+            <button onclick="transformSelected()">Transform selected</button>
+            
             
         </div>
             
@@ -38,6 +40,7 @@
                 position: absolute;
                 width: 100%;
                 height: 100%;
+                z-index: 1000000000;
 
             }
             #board {
@@ -49,6 +52,12 @@
                 border:1px solid #f00;
                 width:20px;
                 height:20px;
+            }
+
+            .transformed {
+                height:40px;
+                margin-top:-20px;
+                background-color:blue;
             }
 
             #debugpane {
@@ -156,10 +165,13 @@
                     })
                 }
 
+                var newZ = this.calculateZ(aY)
+
                 what.withNode(function(node) {
                     what.onRender( function() {
                         node.style.left = what.x * self.wX
                         node.style.top = what.y * self.wY
+                        node.style.zIndex = newZ
                     })
                 })
                  
@@ -259,6 +271,8 @@
                     y: offsetY * this.wY
                 }
                 
+                var newZ = this.calculateZ(what.y+offsetY)
+
                 this.scheduleAnimation(time, function(ratio) {
 
                     what.withNode( function(node) {
@@ -266,6 +280,7 @@
                             if (ratio == 1) {
                                 node.style.left = end.x + 'px',
                                 node.style.top = end.y + 'px'
+                                node.style.zIndex = newZ
                                 callback(true)
                             }
                             else {
@@ -273,6 +288,21 @@
                                 node.style.top = start.y + ratio*diff.y +'px'
                             }
                         })
+                    })
+                })
+            }
+
+            Board.prototype.calculateZ = function(y) {
+                return y*10
+            }
+
+            Board.prototype.transformEntity = function(ent) {
+                ent.withNode( function(node) {
+                    ent.onRender(function() {
+                        var classes = node.className.split(' ')
+                        classes.push('transformed')
+                        node.className = classes.join(' ')
+                        
                     })
                 })
             }
@@ -418,6 +448,10 @@
 
             function removeSelected() {
                 game.removeSelected()
+            }
+
+            function transformSelected() {
+                game.transformSelected()
             }
 
         </script>
