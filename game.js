@@ -24,11 +24,13 @@ Game.prototype.moveSelected = function(x,y) {
         var startAt = {x: selected.x, y: selected.y}
 
         var board = this.boardApi
+        var fields = board.fields
+        
+        fields.at(startAt.x+x, startAt.y+y).put(selected)
         board.animMove(100, selected, x,y, function(success) {
             if (success) {
-                var fields = board.fields
-                fields.at(startAt.x, startAt.y).put(null)
-                fields.at(startAt.x+x, startAt.y+y).put(selected)
+                fields.at(startAt.x, startAt.y).remove(selected)
+                
                 selected.x += x
                 selected.y += y
 
@@ -43,12 +45,13 @@ Game.prototype.moveSelected = function(x,y) {
 Game.prototype.onClick = function(x,y) {
     var coords = this.boardApi.fieldOf(x,y)
     var atCoords = this.boardApi.fields.at(coords.x, coords.y).is()
-    if (atCoords) {
-        atCoords.markSelected(true)
+    if (atCoords.length > 0) {
+        var first = atCoords[0]
+        first.markSelected(true)
         if (this.selected) {
             this.selected.markSelected(false)
         }
-        this.selected = atCoords
+        this.selected = first
     }
     else {
         var entity = this.boardApi.newEntity()

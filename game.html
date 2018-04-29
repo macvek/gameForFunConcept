@@ -287,16 +287,34 @@
                         if (parent.fields[x] && parent.fields[x][y]) {
                             return parent.fields[x][y]
                         }
+                        else {
+                            return []
+                        }
                     },
                     put : function(what) {
                         if (parent.fields[x]) {
-                            parent.fields[x][y] = what
+                            if (parent.fields[x][y]) {
+                                parent.fields[x][y].push(what)
+                            }
+                            else {
+                                parent.fields[x][y] = [what]
+                            }
                         }
                         else {
                             var sub = []
-                            sub[y] = what
+                            sub[y] = [what]
                             parent.fields[x] = sub
                         }
+                    },
+                    remove : function(what) {
+                        var newList = []
+                        for (var each of parent.fields[x][y]) {
+                            if (each !== what) {
+                                newList.push(each)
+                            }
+                        }
+
+                        parent.fields[x][y] = newList
                     }
 
                 }
