@@ -42,6 +42,16 @@ Game.prototype.moveSelected = function(x,y) {
     }
 }
 
+Game.prototype.removeSelected = function() {
+    if (this.selected) {
+        var s = this.selected
+        var board = this.boardApi
+        board.fields.at(s.x, s.y).remove(s)
+        board.removeEntity(s)
+        this.selected = null
+    }
+}
+
 Game.prototype.onClick = function(x,y) {
     var coords = this.boardApi.fieldOf(x,y)
     var atCoords = this.boardApi.fields.at(coords.x, coords.y).is()

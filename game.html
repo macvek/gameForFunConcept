@@ -20,6 +20,7 @@
             <button onclick="go(1,0)">go RIGHT</button>
             <button onclick="go(0,-1)">go UP</button>
             <button onclick="go(0,1)">go DOWN</button>
+            <button onclick="removeSelected()">Remove selected</button>
             
         </div>
             
@@ -276,6 +277,16 @@
                 })
             }
 
+            Board.prototype.removeEntity = function(ent) {
+                var self = this
+                ent.withNode(function(node) {
+                    self.toRender(function() {
+                        self.board.removeChild(node)
+                        ent.dropNode()
+                    })
+                })
+            }
+
             function XYMap() {
                 this.fields = []
             }
@@ -388,7 +399,10 @@
                 }
             }
 
-            
+            BoardEntity.prototype.dropNode = function(callback) {
+                this._boardPriv.node = null
+            }
+
 
             function moveView(offX,offY) {
                 board.offsetView(offX,offY)
@@ -399,7 +413,11 @@
             }
 
             function go(aX,aY) {
-                game.moveSelected(aX,aY);
+                game.moveSelected(aX,aY)
+            }
+
+            function removeSelected() {
+                game.removeSelected()
             }
 
         </script>
