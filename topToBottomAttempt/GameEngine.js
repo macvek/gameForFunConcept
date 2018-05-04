@@ -116,7 +116,7 @@ class Layer {
 class Entity {
     constructor(layer) {
         this.layer = layer
-        this.eventHandler = new CallbackGroup()
+        this.eventHandler = new CallbackGroupContainer()
         this.area = new Area(this, layer)
     }
 
@@ -134,6 +134,14 @@ class Entity {
         this.eventHandler.allowNewEvents = true
         builder(this.eventHandler)
     }
+
+    fire(eventType) {
+        var args = [this]
+        for (var i=1;i<arguments.length;i++) {
+            args.push(arguments[i])
+        }
+        this.eventHandler.optional(eventType).on(x => x.trigger.apply(x, args))
+    }
 }
 
 class Area {
@@ -144,12 +152,12 @@ class Area {
 
     rectDistanceTo(other) {
         this.assertSameLayer(other.layer)
-        return this.entity.position.rectDistanceTo(other.entity.position)
+        return this.entity.position.rectDistanceTo(other.position)
     }
 
     distanceTo(other) {
         this.assertSameLayer(other.layer)
-        return this.entity.position.distanceTo(other.entity.position)
+        return this.entity.position.distanceTo(other.position)
     }
 
     randomMove() {
@@ -168,9 +176,8 @@ class Area {
 
     moveTowards(other) {
         this.assertSameLayer(other.layer)
-        
         var direction = this.entity.position.directionTo(other.position).round()
-        this.layer.moveIfPossible(this.entity,)
+        this.layer.moveIfPossible(this.entity, this.entity.position.offsetBy(direction))
     }
 
     assertSameLayer(layer) {
@@ -219,9 +226,9 @@ class XY {
 
 class CallbackGroupContainer {
     constructor(events = {}) {
-        this.events = events
+        this.events = {}
         for (var key in events) {
-            events[key] = new CallbackGroup()
+            this.events[key] = new CallbackGroup()
         }
         this.allowNewEvents = false
     }

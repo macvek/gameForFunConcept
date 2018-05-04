@@ -23,6 +23,15 @@ gameEngine.on(gameEngine.EVENTS.afterFrame).add( () => {
 })
 
 var frameCallbacks = gameEngine.on(gameEngine.EVENTS.frame)
+frameCallbacks.add( (frame) => {
+    dummyA.fire(gameEngine.EVENTS.frame, frame)
+    dummyB.fire(gameEngine.EVENTS.frame, frame)
+})
+
+gameEngine.on(gameEngine.EVENTS.start).add( () => {
+    dummyA.mode = 'wait'
+    dummyA.waitFrames = 0
+})
 
 dummyA.entityScript( (when) => {
     var anyKey = {}
@@ -32,7 +41,7 @@ dummyA.entityScript( (when) => {
         roam: anyKey,
         found: anyKey,
     }
-    gameEngine.populateKeys
+    gameEngine.populateKeys(events)
     when.on(events.idle).add((entity) => {
         if (entity.area.distanceTo(dummyB) < 5) {
             entity.fire(events.follow)
@@ -50,7 +59,7 @@ dummyA.entityScript( (when) => {
         entity.waitFrames = 5
     })
 
-    when.on(GameEngine.EVENTS.frame).add( (entity, frame) => {
+    when.on(gameEngine.EVENTS.frame).add( (entity, frame) => {
         if (entity.area.rectDistanceTo(dummyB) == 1) {
             entity.fire(events.found)
         }
@@ -76,8 +85,8 @@ dummyA.entityScript( (when) => {
 gameEngine.start()
 
 gameEngine.frame()
-
-
+gameEngine.frame()
+gameEngine.frame()
 
 
 
