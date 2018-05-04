@@ -107,9 +107,9 @@ class Layer {
         if (!grid[nPos.y][nPos.x]) {
             grid[pos.y][pos.x] = null
             grid[nPos.y][nPos.x] = ent
+            ent.position = nPos
         }
 
-        ent.position = nPos
     }
 }
 
@@ -162,8 +162,8 @@ class Area {
 
     randomMove() {
         var pos = this.entity.position;
-        var rX = Math.floor(Math.random()*2) - 1
-        var rY = Math.floor(Math.random()*2) - 1
+        var rX = Math.floor(Math.random()*3) - 1
+        var rY = Math.floor(Math.random()*3) - 1
         if (rX == 0 && rY == 0) { 
             return;
         }
@@ -189,6 +189,7 @@ class Area {
 
 class XY {
     constructor(x,y) {
+        if (x == NaN) debugger;
         this.x = x
         this.y = y
     }
@@ -198,7 +199,7 @@ class XY {
     }
 
     distanceTo(other) {
-        return Math.sqrt(Math.pow(other.x-this.x,2), Math.pow(other.y-this.y,2))
+        return Math.sqrt(Math.pow(other.x-this.x,2) + Math.pow(other.y-this.y,2))
     }
 
     offsetBy(other) {
@@ -214,8 +215,8 @@ class XY {
     }
     
     bounds(mX,mY) {
-        var nX = Math.min(Math.max(this.x,0),mX)
-        var nY = Math.min(Math.max(this.y,0),mY)
+        var nX = Math.min(Math.max(this.x,0),mX-1)
+        var nY = Math.min(Math.max(this.y,0),mY-1)
         return nX == this.x && nY == this.y ? this : new XY(nX,nY)
     }
 

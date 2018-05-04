@@ -11,12 +11,12 @@ dummyA.conSymbol ='A'
 
 var dummyB = layer.newEntity()
 dummyB.conSymbol ='B'
-dummyB.putAt(3,1)
+dummyB.putAt(8,1)
 
 gameEngine.on(gameEngine.EVENTS.start).add( () => console.log("game started"))
 gameEngine.on(gameEngine.EVENTS.beforeFrame).add( (count) => console.log(">> frame: "+count))
 var consoleDraw = new ConsoleDraw()
-consoleDraw.clearBeforeDraw = false
+consoleDraw.clearBeforeDraw = true
 
 gameEngine.on(gameEngine.EVENTS.afterFrame).add( () => {
     consoleDraw.drawLayer(layer)
@@ -33,7 +33,13 @@ gameEngine.on(gameEngine.EVENTS.start).add( () => {
     dummyA.waitFrames = 0
 })
 
-dummyA.entityScript( (when) => {
+dummyB.entityScript( when => {
+    when.on(gameEngine.EVENTS.frame).add( (entity, frame) => {
+        entity.area.randomMove()
+    })
+})
+
+dummyA.entityScript( when => {
     var anyKey = {}
     var events = {
         idle: anyKey,
@@ -83,10 +89,6 @@ dummyA.entityScript( (when) => {
 
 
 gameEngine.start()
-
-gameEngine.frame()
-gameEngine.frame()
-gameEngine.frame()
-
+setInterval(function() {gameEngine.frame()},1000)
 
 
