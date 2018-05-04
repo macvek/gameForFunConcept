@@ -11,12 +11,72 @@ dummyA.conSymbol ='A'
 
 var dummyB = layer.newEntity()
 dummyB.conSymbol ='B'
-dummyB.putAt(2,1)
+dummyB.putAt(3,1)
 
-
-
+gameEngine.on(gameEngine.EVENTS.start).add( () => console.log("game started"))
+gameEngine.on(gameEngine.EVENTS.beforeFrame).add( (count) => console.log(">> frame: "+count))
 var consoleDraw = new ConsoleDraw()
-consoleDraw.drawLayer(layer)
+consoleDraw.clearBeforeDraw = false
+
+gameEngine.on(gameEngine.EVENTS.afterFrame).add( () => {
+    consoleDraw.drawLayer(layer)
+})
+
+var frameCallbacks = gameEngine.on(gameEngine.EVENTS.frame)
+
+dummyA.entityScript( (when) => {
+    var anyKey = {}
+    var events = {
+        idle: anyKey,
+        follow: anyKey,
+        roam: anyKey,
+        found: anyKey,
+    }
+    gameEngine.populateKeys
+    when.on(events.idle).add((entity) => {
+        if (entity.area.distanceTo(dummyB) < 5) {
+            entity.fire(events.follow)
+        }
+        else {
+            entity.fire(events.roam)
+        }
+    })
+
+    when.on(events.follow).add((entity) => entity.mode = 'follow')
+    when.on(events.roam).add((entity) => entity.mode = 'roam')
+    when.on(events.found).add((entity) => {
+        console.log("found it!!")
+        entity.mode = 'wait'
+        entity.waitFrames = 5
+    })
+
+    when.on(GameEngine.EVENTS.frame).add( (entity, frame) => {
+        if (entity.area.rectDistanceTo(dummyB) == 1) {
+            entity.fire(events.found)
+        }
+        
+        switch(entity.mode) {
+            case 'wait':
+                if (entity.waitFrames-- <= 0) {
+                    entity.fire(events.idle);
+                }
+                break;
+            case 'roam':
+                entity.area.randomMove()
+                entity.fire(events.idle)
+                break;
+            case 'follow':
+                entity.area.moveTowards(dummyB)
+                break;
+        }
+    })
+})
+
+
+gameEngine.start()
+
+gameEngine.frame()
+
 
 
 

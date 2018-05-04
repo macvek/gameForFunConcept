@@ -1,5 +1,12 @@
 module.exports = class ConsoleDraw {
+    constructor() {
+        this.clearBeforeDraw = false
+    }
+    
     drawLayer(layer) {
+        if (this.clearBeforeDraw) {
+            console.clear()
+        }
         drawLine(border('/','-','\\'))
 
         for (var y=0;y<layer.sizeY;y++) {
