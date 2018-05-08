@@ -25,6 +25,10 @@ module.exports = class GameEngine {
         return this.handlers.on(eventType)
     }
 
+    eventSink() {
+        return this.handlers.sink()
+    }
+
     mapBuilder() {
         return new MapBuilder(this)
     }
@@ -53,7 +57,7 @@ module.exports = class GameEngine {
 
 class MapBuilder {
     constructor(gameEngine) {
-        this.gameEngine
+        this.gameEngine = gameEngine
         this.sizeX = 0
         this.sizeY = 0
         this.layers = []
